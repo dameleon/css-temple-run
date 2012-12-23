@@ -1,0 +1,64 @@
+// 使うベンダープレフィックスを設定
+$DEF_PREFIXES: (webkit, moz, o, ms)
+// FPSを設定
+$DEF_FPS: 24
+
+
+@function get-sec-by-frame($frame)
+    @return (1 / $DEF_FPS) * $frame
+
+
+@mixin add-prefix($prop, $value) 
+    @each $prefix in $DEF_PREFIXES
+        -#{$prefix}-#{$prop}: #{$value}
+
+    #{$prop}: #{$value}
+
+
+@mixin keyframes($name) 
+    $name: kf-#{$name}
+
+    @if index($DEF_PREFIXES, webkit)
+        @-webkit-keyframes #{$name} 
+            @content
+    @if index($DEF_PREFIXES, moz)
+        @-moz-keyframes #{$name} 
+            @content
+    @if index($DEF_PREFIXES, o)
+        @-o-keyframes #{$name} 
+            @content
+    @if index($DEF_PREFIXES, ms)
+        @-ms-keyframes #{$name} 
+            @content
+    @keyframes #{$name} 
+        @content
+
+
+@mixin create-anime ($name, $args...) 
+    $last_frame: length($args) - 1
+    $duration: get-sec-by-frame(nth($args, $last_frame))
+    $loop_index: 1
+    
+    %#{$name}
+        @include add-prefix(animation-name, kf-#{$name})
+        @include add-prefix(animation-duration, #{$duration}s)
+        @if type-of(nth($args, 1)) == 'list'
+            $loop_index: 2
+            $options: nth($args, 1)
+            @each $option in $options
+                @include add-prefix(animation-#{nth($option, 1)}, nth($option, 2))
+
+    @include keyframes($name) 
+        $i: $loop_index
+        @while ($i <= length($args)) 
+            $frame: nth($args, $i)
+            $styles: nth($args, $i + 1)
+            $i: $i + 2
+            $position:  percentage(get-sec-by-frame($frame) / $duration)
+            #{$position}
+                @if length($styles) > 2
+                    @each $style in $styles
+                        #{nth($style, 1)}: #{nth($style, 2)}
+
+                @else
+                    #{nth($styles, 1)}: #{nth($styles, 2)}

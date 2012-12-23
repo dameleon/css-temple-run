@@ -1,0 +1,293 @@
+
+body {
+    background: #000;
+}
+
+
+
+// 座標系を調整
+.stage, .bg {
+    position: absolute;
+    top: 50px;
+    left: 100px;
+    width: 300px;
+    height: 200px;
+    margin: 50px 100px;
+}
+
+.bg {
+    -webkit-perspective: 500;
+    > div {
+        position: absolute;
+    }
+}
+
+.road {
+    top: 35px;
+    width: 300px;
+    height: 500px;
+    background-color: #FF6;
+    -webkit-transform: rotateX(-290deg);
+    background-image: url(https://dl.dropbox.com/s/z6duxhniz3w7d09/road.gif);
+    background-position: center top;
+    background-repeat: repeat-y;
+    background-size: 100% auto;
+
+    @extend %road;
+}
+
+@include create-anime(
+    'road',
+    (
+        timing-function linear,
+        iteration-count infinite
+    ),
+    1, (
+        background-position (center top)
+    ),
+    20, (
+        background-position (center bottom)
+    )
+);
+
+.wall_l, .wall_r {
+    background-image: url(https://dl.dropbox.com/s/qg4ty8q8dd55bqe/tree.jpg);
+    background-repeat: repeat-x;
+    background-size: auto 100%;
+}
+
+.wall_l {
+    top: 23px;
+    left: -360px;
+    width: 770px;
+    height: 200px;
+    background-position: right top;
+    -webkit-transform: rotateY(98.6deg);
+
+    @extend %wall_l;
+}
+
+@include create-anime(
+    'wall_l',
+    (
+        timing-function linear,
+        iteration-count infinite
+    ),
+    1, (
+        background-position (right top)
+    ),
+    40, (
+        background-position (left top)
+    )
+);
+
+.wall_r {
+    top: 23px;
+    left: -110px;
+    width: 770px;
+    height: 200px;
+    background-position: left top;
+    -webkit-transform: rotateY(-98.6deg);
+
+    @extend %wall_r;
+}
+
+@include create-anime(
+    'wall_r',
+    (
+        timing-function linear,
+        iteration-count infinite
+    ),
+    1, (
+        background-position (left top)
+    ),
+    40, (
+        background-position (right top)
+    )
+);
+
+
+#player {
+    position: absolute;
+    z-index: 10;
+    top: 410px;
+    left: -50px;
+    width: 400px;
+    height: 150px;
+    -webkit-appearance: none;
+
+    & ~ .action {
+        background-position: left top;
+    }
+
+    &:checked {
+        & ~ .action {
+            background-position: right top;
+        }
+        & ~ .block_01:hover ~ .action {
+            display: none;
+        }
+    }
+}
+
+.state {
+    -webkit-appearance: none;
+
+    &[value=left]:checked {
+        & ~ .ctrl_r {
+            z-index: 10;
+        }
+        & ~ .action {
+            background-position: left top;
+        }
+    }
+    &[value=right]:checked {
+        & ~ .ctrl_l {
+            z-index: 10;
+        }
+        & ~ .action {
+            background-position: right top;
+        }
+    }
+}
+
+.ctrl_l, .ctrl_r {
+    position: absolute;
+    z-index: 9;
+    top: 410px;
+    left: -50px;
+    width: 400px;
+    height: 150px;
+}
+
+.action {
+    position: absolute;
+    z-index: 9;
+    top: 410px;
+    left: -50px;
+    width: 400px;
+    height: 150px;
+    background-image: url(https://dl.dropbox.com/s/ef9pdfctl2fr12n/charactor.gif);
+    background-repeat: no-repeat;
+    background-position: left top;
+    opacity: 1;
+}
+
+@include create-anime(
+    'crash',
+    (
+        timing-function ease-out,
+        iteration-count 1
+    ),
+    12, (
+        top 220px,
+        background-position (center center),
+        -webkit-transform (scale3d(5,5,1) rotateZ(360deg)),
+        opacity 1
+    ),
+    13, (
+        opacity 0
+    )
+);
+
+
+.stage a[class*=block_] {
+    position: absolute;
+    z-index: 11;
+    top: 105px;
+    left: 55px;
+    width: 190px;
+    height: 70px;
+    -webkit-appearance: none;
+    background-image: url(https://dl.dropbox.com/s/63z2uiqq1060bbu/santa.png);
+    background-repeat: no-repeat;
+    background-size: auto 100%;
+    opacity: 0;
+
+    @extend %block;
+}
+
+@include create-anime(
+    'block',
+    (
+        timing-function ease-in,
+        iteration-count 1,
+        direction       normal,
+        fill-mode       none
+    ),
+    1, (
+        top 105px,
+        left 55px,
+        width 190px,
+        height 70px,
+        opacity 1
+    ),
+    40, (
+        top 400px,
+        left -68px,
+        width 440px,
+        height 200px,
+        opacity 1
+    )
+);
+
+
+// 衝突情報とdelay秒数のブレのセット
+// 0 なら left で衝突
+// 1 なら right で衝突
+$blocks:
+        0 0,
+        1 0,
+        0 -1,
+        0 1,
+        1 -1,
+        0 0,
+        1 -1,
+        0 0,
+        1 0,
+        0 -1,
+        0 1,
+        1 -1,
+        0 -2,
+        1 -1,
+        0 2,
+        1 -1,
+        0 0,
+        1 -1,
+        0 0,
+        1 0,
+        0 -1,
+        0 2,
+        1 -1,
+        0 0;
+
+// ディレイのベース秒数
+$delay_base: 2.5;
+
+@for $i from 1 through length($blocks) {
+    $block: nth($blocks, $i);
+    $angle: nth($block, 1);
+    $delay: ($delay_base * $i) + nth($block, 2);
+    $class_name: block_#{$i};
+
+    @if $angle == 0 {
+        #state_l:checked ~ .#{$class_name}:hover ~ .action {
+            @extend %crash;
+        }
+    }
+    @else {
+        #state_r:checked ~ .#{$class_name}:hover ~ .action {
+            @extend %crash;
+        }
+    }
+
+    .#{$class_name} {
+        -webkit-animation-delay: #{$delay}s;
+        @if $angle == 0 {
+            background-position: left top;
+        }
+        @else {
+            background-position: right top;
+        }
+    }
+}
